@@ -28,17 +28,27 @@ func main() {
 	// see https://godoc.org/golang.org/x/net/html
 	z := html.NewTokenizer(b)
 
+	var next bool = false // use it to check whether TextToken follows StartTagToken
 	for {
 		tt := z.Next()
-		fmt.Println(tt) // prints type of token
+		//fmt.Println(tt) // prints type of token
 		if tt == html.ErrorToken {
 			fmt.Println("Here's the error token.")
 			fmt.Println(z.Err())
 			return // need this to exit the loop
+		} else if tt == html.StartTagToken {
+			tok := z.Token()
+			if next == false && tok.Data == "h1" { // heading 1 contains artist's name
+				next = true // next pass should be a TextToken
+				continue
+			}
+			next = false // next was true, but next pass wasn't a TextToken
 		} else if tt == html.TextToken {
-			fmt.Println("TEXT:", z.Token())
-		} else {
-			fmt.Println(z.Token())
+			tok := z.Token()
+			if next == true { // previous pass was StartTagToken h1
+				fmt.Println(tok) // Artist's name
+				next = false
+			}
 		}
 	}
 }
