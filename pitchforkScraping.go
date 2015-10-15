@@ -28,26 +28,43 @@ func main() {
 	// see https://godoc.org/golang.org/x/net/html
 	z := html.NewTokenizer(b)
 
-	var next bool = false // use it to check whether TextToken follows StartTagToken
+	var songInfoFieldsNext bool = false // use it to check whether TextToken follows StartTagToken
 	for {
 		tt := z.Next()
-		//fmt.Println(tt) // prints type of token
+		//fmt.Println("tt: ",tt) // prints type of token
+		//fmt.Println(z.Token())
 		if tt == html.ErrorToken {
 			fmt.Println("Here's the error token.")
 			fmt.Println(z.Err())
-			return // need this to exit the loop
+			break // exit loop
 		} else if tt == html.StartTagToken {
-			tok := z.Token()
-			if next == false && tok.Data == "h1" { // heading 1 contains artist's name
-				next = true // next pass should be a TextToken
+			currentToken := z.Token()
+			if songInfoFieldsNext == false && currentToken.Data == "h1" { // heading 1 contains artist's name
+				songInfoFieldsNext = true // next pass should be a TextToken
 				continue
+			} else if songInfoFieldsNext == true && currentToken.Data != "h2" { // next was true, but next pass isn't song name
+				songInfoFieldsNext = false
 			}
-			next = false // next was true, but next pass wasn't a TextToken
 		} else if tt == html.TextToken {
-			tok := z.Token()
-			if next == true { // previous pass was StartTagToken h1
-				fmt.Println(tok) // Artist's name
-				next = false
+			currentToken := z.Token()
+			if songInfoFieldsNext == true { // previous pass was StartTagToken h1
+				fmt.Println("Printing artist: ", currentToken) // Artist's name
+				if currentToken.Data != "h2" {                 // not song name that follows artist name
+					continue
+				} else {
+					fmt.Println(currentToken)
+					songInfoFieldsNext = false
+				}
+				//fmt.Println("Next Token 1:",z.Next())
+				//fmt.Println("Next Token 2:",z.Next())
+				//fmt.Println("Token 2 Text:",z.Token())
+				//fmt.Println("Next Token 3:",z.Next())
+				//fmt.Println("Token 3 Text:",z.Token())
+				//fmt.Println("Next Token 4:",z.Next())
+				//fmt.Println("Token 4 Text:",z.Token())
+				//fmt.Println("Next Token 5:",z.Next())
+				//fmt.Println("Token 5 Text:",z.Token())
+				//fmt.Println("Next Token 6:",z.Next())
 			}
 		}
 	}
