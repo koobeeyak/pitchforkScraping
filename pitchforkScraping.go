@@ -2,21 +2,34 @@ package main
 
 import (
 	"fmt"
-	"github.com/tucobenedicto/util"
-	"golang.org/x/net/html"
 	"net/http"
-	"os"
+
+	"strings"
+
+	"golang.org/x/net/html"
 )
 
-func main() {
-	// check if we have any arguments
-	// see github.com/tucobenedicto/util
-	if util.NoArguments() {
-		fmt.Println("No arguments entered.")
-		return
+const (
+	HEADING = "Staff Lists:"
+)
+
+type entry struct {
+	artist string
+	song   string
+}
+
+func checkIfTheresNewline(s string) {
+	for _, value := range s {
+		switch value {
+		case '\n':
+			fmt.Print("theres a new line char")
+		case '\t':
+			fmt.Print("theres a tab line char")
+		}
 	}
-	// take first arg as URL for now
-	url := os.Args[1]
+}
+
+func getArtistsAndSongs(url string) {
 	resp, err := http.Get(url)
 	// can we open it?
 	if err != nil {
@@ -27,36 +40,52 @@ func main() {
 	b := resp.Body
 	// see https://godoc.org/golang.org/x/net/html
 	z := html.NewTokenizer(b)
+	defer resp.Body.Close()
 
-	var songInfoFieldsNext bool = false // use it to check whether TextToken follows StartTagToken
-	type entry struct {
-		artist string
-		song   string
-	}
-	//entries := make([]entry, 2)
+	var artistFieldNext, songFieldNext, inTag bool = false, false, false // use it to check whether TextToken follows StartTagToken
+	var tag string
+	//var entries []entry
 	for {
 		tt := z.Next()
-		//fmt.Println("tt: ",tt) // prints type of token
-		//fmt.Println(z.Token())
 		switch tt {
 		case html.ErrorToken:
 			fmt.Println(z.Err())
 			return // exit loop
 		case html.StartTagToken:
+			inTag = true
 			currentToken := z.Token()
-			if songInfoFieldsNext == false && currentToken.Data == "h1" { // heading 1 contains artist's name
-				songInfoFieldsNext = true // next pass should be a TextToken
-				continue
-			} else if songInfoFieldsNext == true && currentToken.Data != "h2" { // next was true, but next pass isn't song name
-				songInfoFieldsNext = false
+			tag = currentToken.Data
+			if artistFieldNext == false && currentToken.Data == "h1" { // heading 1 contains artist's name
+				fmt.Println("Data: ", currentToken.Data)
+				artistFieldNext = true // next pass should be a TextToken
+			} else if artistFieldNext == true && currentToken.Data != "h2" { // next was true, but next pass isn't song name
+				artistFieldNext = false
 			}
+		case html.EndTagToken:
+			inTag = false
 		case html.TextToken:
 			currentToken := z.Token()
-			if songInfoFieldsNext == true { // previous pass was StartTagToken h1
-				if currentToken.Data != "" {
-					fmt.Println("Printing artist: ", currentToken)
-				}
+			if strings.HasPrefix(currentToken.String(), HEADING) {
+				continue
+			}
+			if artistFieldNext == true && songFieldNext == false && inTag == true { // previous pass was StartTagToken h1
+				fmt.Println("Artist:", currentToken)
+				fmt.Println("Data: ", tag)
+				songFieldNext = true
+				checkIfTheresNewline(currentToken.String())
+				//current := entry{}
+				//current.artist =
+			} else if artistFieldNext == true && songFieldNext == true && inTag == true {
+				fmt.Println("Song: ", currentToken)
+				fmt.Println("Data: ", tag)
+				songFieldNext = false
 			}
 		}
 	}
+
+}
+
+func main() {
+	url := "http://pitchfork.com/features/staff-lists/9700-the-200-best-songs-of-the-1980s/"
+	getArtistsAndSongs(url)
 }
