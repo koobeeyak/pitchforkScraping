@@ -10,23 +10,13 @@ import (
 )
 
 const (
-	HEADING = "Staff Lists:"
+	OPEN  = "Staff Lists:"
+	CLOSE = "Soundplay"
 )
 
 type entry struct {
 	artist string
 	song   string
-}
-
-func checkIfTheresNewline(s string) {
-	for _, value := range s {
-		switch value {
-		case '\n':
-			fmt.Print("theres a new line char")
-		case '\t':
-			fmt.Print("theres a tab line char")
-		}
-	}
 }
 
 func getArtistsAndSongs(url string) {
@@ -42,7 +32,7 @@ func getArtistsAndSongs(url string) {
 	z := html.NewTokenizer(b)
 	defer resp.Body.Close()
 
-	var artistFieldNext, songFieldNext, inTag bool = false, false, false // use it to check whether TextToken follows StartTagToken
+	var inTag bool = false // use it to check whether TextToken follows StartTagToken
 	var tag string
 	//var entries []entry
 	for {
@@ -55,34 +45,23 @@ func getArtistsAndSongs(url string) {
 			inTag = true
 			currentToken := z.Token()
 			tag = currentToken.Data
-			if artistFieldNext == false && currentToken.Data == "h1" { // heading 1 contains artist's name
-				fmt.Println("Data: ", currentToken.Data)
-				artistFieldNext = true // next pass should be a TextToken
-			} else if artistFieldNext == true && currentToken.Data != "h2" { // next was true, but next pass isn't song name
-				artistFieldNext = false
-			}
 		case html.EndTagToken:
 			inTag = false
 		case html.TextToken:
 			currentToken := z.Token()
-			if strings.HasPrefix(currentToken.String(), HEADING) {
+			if strings.HasPrefix(currentToken.String(), OPEN) { // the title of the article has an h1 tag
 				continue
-			}
-			if artistFieldNext == true && songFieldNext == false && inTag == true { // previous pass was StartTagToken h1
+			} else if strings.HasPrefix(currentToken.String(), CLOSE) { // last lines of article with h1 tag
+				break
+			} else if tag == "h1" && inTag == true { // previous pass was StartTagToken h1
 				fmt.Println("Artist:", currentToken)
-				fmt.Println("Data: ", tag)
-				songFieldNext = true
-				checkIfTheresNewline(currentToken.String())
 				//current := entry{}
 				//current.artist =
-			} else if artistFieldNext == true && songFieldNext == true && inTag == true {
+			} else if tag == "h2" && inTag == true {
 				fmt.Println("Song: ", currentToken)
-				fmt.Println("Data: ", tag)
-				songFieldNext = false
 			}
 		}
 	}
-
 }
 
 func main() {
