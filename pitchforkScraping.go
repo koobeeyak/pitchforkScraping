@@ -14,37 +14,40 @@ const (
 	CLOSE = "Soundplay"
 )
 
-type entry struct {
+type Entry struct {
 	artist string
 	song   string
 }
 
-func getArtistsAndSongs(url string) {
+type Entries []Entry
+
+func getArtistsAndSongs(url string) (entries Entries) {
+	// init variables
+	var inTag bool = false
+	var tag string
+	e := Entry{}
+
+	// try to open page
 	resp, err := http.Get(url)
-	// can we open it?
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Couldn't open page: ", err)
 		return
 	}
 
+	// init tokenizer
 	b := resp.Body
-	// see https://godoc.org/golang.org/x/net/html
+	defer b.Close()
 	z := html.NewTokenizer(b)
-	defer resp.Body.Close()
 
-	var inTag bool = false // use it to check whether TextToken follows StartTagToken
-	var tag string
-	//var entries []entry
 	for {
 		tt := z.Next()
 		switch tt {
 		case html.ErrorToken:
-			fmt.Println(z.Err())
-			return // exit loop
+			fmt.Println("Error, exited early.") // should return before hitting EOF here
+			return
 		case html.StartTagToken:
 			inTag = true
-			currentToken := z.Token()
-			tag = currentToken.Data
+			tag = z.Token().Data
 		case html.EndTagToken:
 			inTag = false
 		case html.TextToken:
@@ -52,13 +55,15 @@ func getArtistsAndSongs(url string) {
 			if strings.HasPrefix(currentToken.String(), OPEN) { // the title of the article has an h1 tag
 				continue
 			} else if strings.HasPrefix(currentToken.String(), CLOSE) { // last lines of article with h1 tag
-				break
-			} else if tag == "h1" && inTag == true { // previous pass was StartTagToken h1
-				fmt.Println("Artist:", currentToken)
-				//current := entry{}
-				//current.artist =
-			} else if tag == "h2" && inTag == true {
-				fmt.Println("Song: ", currentToken)
+				//fmt.Println("Final entries: ", entries) // TODO check tag type instead?
+				return
+			} else if tag == "h1" && inTag == true { // h1 tag indicates artist
+				e.artist = currentToken.String()
+			} else if tag == "h2" && inTag == true { // h2 tag indicates song
+				e.song = currentToken.String()
+				entries = append(entries, e)
+				fmt.Println(entries)
+				e = Entry{}
 			}
 		}
 	}
@@ -66,5 +71,6 @@ func getArtistsAndSongs(url string) {
 
 func main() {
 	url := "http://pitchfork.com/features/staff-lists/9700-the-200-best-songs-of-the-1980s/"
-	getArtistsAndSongs(url)
+	final := getArtistsAndSongs(url)
+	fmt.Println("Compare to:", final)
 }
