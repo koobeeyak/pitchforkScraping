@@ -7,21 +7,27 @@ import sys
 SEARCH_LIMIT = 50
 PAGE_LIMIT = 15 # iterate through this number of page results
 
-
-def find_songs(user):
-    token = util.prompt_for_user_token(user,scope='user-library-read')
-    if token:
-        sp = spotipy.Spotify(token)
-        songs = sp.current_user_saved_tracks(limit=10)
-        print songs
-    else:
-        print "Can't get %s\'s token." % (user)
-
-def add_song_to_playlist(user,song_uri,playlist_id):
+def add_song_to_playlist(user,song_uri_list,playlist_id):
     token = util.prompt_for_user_token(user,scope='playlist-modify-public')
     if token:
         sp = spotipy.Spotify(token)
-        sp.user_playlist_add_tracks(user,playlist_id,song_uri)
+        sp.user_playlist_add_tracks(user,playlist_id,song_uri_list) # takes a list of song uris (single uri will not work)
+    else:
+        print "Can't get %s\'s token." % (user)
+
+
+def create_and_return_playlist(user,playlist_name):
+    token = util.prompt_for_user_token(user,scope='playlist-modify-public')
+    if token:
+        sp = spotipy.Spotify(token)
+        sp.user_playlist_create(user,playlist_name,public=True)
+        playlists = sp.user_playlists(user)
+        for playlist in playlists['items']:
+            if playlist['owner']['id'] == user and playlist['name'] == playlist_name: # find the playlist that was just made
+                return playlist['uri']
+        print "Couldn't find playlist %s." % playlist_name
+    else:
+        print "Can't get %s\'s token." % (user)
 
 
 def get_artist_uri(artist):
@@ -32,7 +38,7 @@ def get_artist_uri(artist):
         for i in items:
             if i['name'] == artist:
                 return i['uri']
-    print "Couldn't find artist."
+    print "Couldn't find the artist \"%s\"." % artist
 
 
 def get_artists_song_uri(artist_uri, name):
@@ -51,7 +57,7 @@ def get_artists_song_uri(artist_uri, name):
         for a in i['artists']:
             if a['uri'] == artist_uri:
                 return song_uri
-    print "Couldn't find the track"
+    print "Couldn't find the track \"%s\"." % name
 
 
 if __name__ == "__main__":
@@ -66,4 +72,3 @@ if __name__ == "__main__":
         artist, song = joined.split(":")
         artist_uri = get_artist_uri(artist)
         song_uri = get_artists_song_uri(artist_uri, song)
-    add_song_to_playlist("1223788894",[song_uri],"spotify:user:1223788894:playlist:1ckhN9MgnC7JtULrZOYCOM")
