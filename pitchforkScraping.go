@@ -1,3 +1,5 @@
+// NOTE: this is currently NOT being used as part of scrape_and_app.py
+// Keeping it here for reference of first attempt.
 package main
 
 import (
@@ -55,14 +57,12 @@ func getArtistsAndSongs(url string) (entries Entries) {
 			if strings.HasPrefix(currentToken.String(), OPEN) { // the title of the article has an h1 tag
 				continue
 			} else if strings.HasPrefix(currentToken.String(), CLOSE) { // last lines of article with h1 tag
-				//fmt.Println("Final entries: ", entries) // TODO check tag type instead?
 				return
 			} else if tag == "h1" && inTag == true { // h1 tag indicates artist
 				e.artist = currentToken.String()
 			} else if tag == "h2" && inTag == true { // h2 tag indicates song
 				e.song = currentToken.String()
 				entries = append(entries, e)
-				fmt.Println(entries)
 				e = Entry{}
 			}
 		}
@@ -72,5 +72,5 @@ func getArtistsAndSongs(url string) (entries Entries) {
 func main() {
 	url := "http://pitchfork.com/features/staff-lists/9700-the-200-best-songs-of-the-1980s/"
 	final := getArtistsAndSongs(url)
-	fmt.Println("Compare to:", final)
+	fmt.Println(final)
 }
