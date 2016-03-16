@@ -6,21 +6,22 @@ import sys
 #const
 SEARCH_LIMIT = 50
 PAGE_LIMIT = 15 # iterate through this number of page results
+UPLOAD_LIMIT = 100 # Spotify API limits to 100 songs per request.
 
-def add_song_to_playlist(user,song_uri_list,playlist_id):
-    token = util.prompt_for_user_token(user,scope='playlist-modify-public')
+def add_song_to_playlist(user, song_uri_list, playlist_id):
+    token = util.prompt_for_user_token(user, scope='playlist-modify-public')
     if token:
         sp = spotipy.Spotify(token)
-        sp.user_playlist_add_tracks(user,playlist_id,song_uri_list) # takes a list of song uris (single uri will not work)
+        sp.user_playlist_add_tracks(user, playlist_id, song_uri_list) # takes a list of song uris (single uri will not work)
     else:
         print "Can't get %s\'s token." % (user)
 
 
-def create_and_return_playlist(user,playlist_name):
-    token = util.prompt_for_user_token(user,scope='playlist-modify-public')
+def create_and_return_playlist(user, playlist_name):
+    token = util.prompt_for_user_token(user, scope='playlist-modify-public')
     if token:
         sp = spotipy.Spotify(token)
-        sp.user_playlist_create(user,playlist_name,public=True)
+        sp.user_playlist_create(user, playlist_name, public=True)
         playlists = sp.user_playlists(user)
         for playlist in playlists['items']:
             if playlist['owner']['id'] == user and playlist['name'] == playlist_name: # find the playlist that was just made
@@ -59,6 +60,24 @@ def get_artists_song_uri(artist_uri, name):
                 return song_uri
     print "Couldn't find the track \"%s\"." % name
 
+def get_list_of_song_uris(d):
+    """
+    Return list of song uris to be passed into Spotipy method user_playlist_add_tracks()
+    """
+    l = []
+    i = 0
+    for k in d:
+        if i < UPLOAD_LIMIT:
+            artist_uri = get_artist_uri(k)
+            song_uri = get_artists_song_uri(artist_uri,d[k])
+            if song_uri == None:
+                print "Couldn't find song for %s: %s." % (k, d[k])
+            else:
+                l.append(song_uri)
+                i += 1
+        else: # reached upload limit
+            break
+    return l
 
 if __name__ == "__main__":
     # TODO apparantly artist name is case sensitive

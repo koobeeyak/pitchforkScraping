@@ -5,7 +5,7 @@ def scrape_page(response):
     """
     Returns dict of key: artist, value: song
     """
-    soup = BeautifulSoup(response.text,"html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
     d = {}
     for entry in soup.find_all(class_ = "title"):
         artist = entry.find('h1').text
@@ -36,7 +36,7 @@ def get_title(url):
     Returns title of feature. This can be used to name playlist.
     """
     response = requests.get(url)
-    soup = BeautifulSoup(response.text,"html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
     h = soup.head
     title = h.find('title').text
     return title
@@ -52,5 +52,5 @@ if __name__ == "__main__":
     print get_title(url)
     songs = scrape_pitchfork(url)
     for artist in songs:
-        print "Artist:",artist
-        print "Song:",songs[artist]
+        print "Artist:", artist
+        print "Song:", songs[artist]
