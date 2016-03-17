@@ -10,7 +10,7 @@ This script will scrape artist and song titles from all the pages of the online 
 
 Usage
 -----
-    $ python scrape_and_add.py YOUR_SPOTIFY_URI_NUMBER http://pitchfork.com/LINK/TO/BEST/OF/FEATURE
+    $ python pitchforkScraping/ YOUR_SPOTIFY_URI_NUMBER http://pitchfork.com/LINK/TO/BEST/OF/FEATURE
 
 Dependencies
 ------------------
@@ -20,15 +20,15 @@ Dependencies
 ###Spotipy 2.0
     $ pip install spotipy
 
-See http://spotipy.readthedocs.org/en/latest/ for help setting up local Spotify API environment.
+See [Spotipy's documentation](http://spotipy.readthedocs.org/en/latest/) for help setting up local Spotify API environment.
 
 
 "Best Of" Example URLs
 ----------------------------
-### 200 Best Songs of the 1980's
+### [200 Best Songs of the 1980's](http://pitchfork.com/features/lists-and-guides/9466-the-top-200-tracks-of-2010-2014/)
 
-http://pitchfork.com/features/staff-lists/9700-the-200-best-songs-of-the-1980s/
+### [200 Best Songs of the 1980's](http://pitchfork.com/features/lists-and-guides/9700-the-200-best-songs-of-the-1980s/)
 
+### [100 Best Tracks of 2015](http://pitchfork.com/features/lists-and-guides/9765-the-100-best-tracks-of-2015/)
 
-### 100 Best Tracks of 2015
-http://pitchfork.com/features/staff-lists/9765-the-100-best-tracks-of-2015/
+####More can be found [here](http://pitchfork.com/features/lists-and-guides/).
