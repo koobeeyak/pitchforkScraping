@@ -1,45 +1,49 @@
 from bs4 import BeautifulSoup
-import requests, sys
+import requests, sys, urllib2, json, pprint
 
-def scrape_page(response):
-    """
-    Returns dict of key: artist, value: song
-    """
-    soup = BeautifulSoup(response.text, "html.parser")
-    d = {}
-    for entry in soup.find_all(class_ = "title"):
-        artist = entry.find('h1').text
-        song = entry.find('h2').text.strip().replace(u'\u201c','').replace(u'\u201d','') # remove whitespace and quotation marks
-        d[artist] = song
-    return d
+def get_soup(url):
+	header = {
+		'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
+	}
+	request = urllib2.Request(url, headers=header)
+	page = urllib2.urlopen(request).read()
+	soup = BeautifulSoup(page, "html.parser")
+	return soup
 
 def scrape_pitchfork(url):
-    """
-    Scrapes base url, then attempts to crawl remaining pages of feature
-    """
-    if url[-1] != "/":
-        url += "/"
-    url += "1/"
-    i = 1
-    response = requests.get(url)
-    d = {}
-    while response.status_code != 404: # keep getting next page of feature until 404
-        d.update(scrape_page(response))
-        length = len(str(i)) + 1 # this is how much of url string will be replaced e.g. 2 for one digit, 3 for two digits
-        i += 1
-        url = url[:-length] + str(i) + "/" # crawling the next page
-        response = requests.get(url)
-    return d
+        soup = get_soup(url)
+	scripts = soup.find_all('script')
+	start_of_json = "window.App="
+	for script in scripts:
+		if script.text.startswith(start_of_json):
+			ignore_this = len(start_of_json)
+			# get just the string of json, the -1 is for a semicolon at the end
+			json_string = script.text[ignore_this:-1]
+			pfork_json = json.loads(json_string)
+	artists_and_songs = generate_dict_of_artists_and_songs(pfork_json)
+	return artists_and_songs
 
 def get_title(url):
-    """
-    Returns title of feature. This can be used to name playlist.
-    """
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    h = soup.head
-    title = h.find('title').text
-    return title
+	soup = get_soup(url)
+	h = soup.head
+	title = h.find('title').text
+	return title
+
+def generate_dict_of_artists_and_songs(pfork_json):
+	d = {}
+	features = pfork_json["context"]["dispatcher"]["stores"]["FeaturesStore"]
+	feature_number = features["itemPages"][0]
+	list_of_entries = features["items"][str(feature_number)]["body"]["en"]
+	# list_of_entries is a list of lists of entries, 10 per page
+	for page in list_of_entries:
+		for entry in page:
+			#pprint.pprint(entry["data"])
+			if "custom_artist_display" not in entry["data"]:
+				continue
+			artist = entry["data"]["custom_artist_display"]
+			song = entry["data"]["custom_track_name"].replace('"','')
+			d[artist] = song
+	return d
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
