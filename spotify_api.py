@@ -2,20 +2,21 @@ import spotipy
 import spotipy.util as util
 import sys
 
-
 #const
 SEARCH_LIMIT = 50
-PAGE_LIMIT = 15 # iterate through this number of page results
-UPLOAD_LIMIT = 100 # Spotify API limits to 100 songs per request.
+PAGE_LIMIT = 15 # iterate through this many pages of search results
+UPLOAD_LIMIT = 100 # Spotify API limits to 100 songs per request
 
 def add_song_to_playlist(user, song_uri_list, playlist_id):
     token = util.prompt_for_user_token(user, scope='playlist-modify-public')
     if token:
         sp = spotipy.Spotify(token)
-        sp.user_playlist_add_tracks(user, playlist_id, song_uri_list) # takes a list of song uris (single uri will not work)
+        while len(song_uri_list) > UPLOAD_LIMIT:
+            sp.user_playlist_add_tracks(user, playlist_id, song_uri_list[0:100])
+            song_uri_list = song_uri_list[100:]
+        sp.user_playlist_add_tracks(user, playlist_id, song_uri_list)
     else:
         print "Can't get %s\'s token." % (user)
-
 
 def create_and_return_playlist(user, playlist_name):
     token = util.prompt_for_user_token(user, scope='playlist-modify-public')
@@ -24,12 +25,12 @@ def create_and_return_playlist(user, playlist_name):
         sp.user_playlist_create(user, playlist_name, public=True)
         playlists = sp.user_playlists(user)
         for playlist in playlists['items']:
-            if playlist['owner']['id'] == user and playlist['name'] == playlist_name: # find the playlist that was just made
+            # find the playlist that was just made
+            if playlist['owner']['id'] == user and playlist['name'] == playlist_name:
                 return playlist['uri']
         print "Couldn't find playlist %s." % playlist_name
     else:
         print "Can't get %s\'s token." % (user)
-
 
 def get_artist_uri(artist):
     sp = spotipy.Spotify()
@@ -39,8 +40,15 @@ def get_artist_uri(artist):
         for i in items:
             if i['name'] == artist:
                 return i['uri']
+        # we still can't find the artist, try changing "Tyler, the Creator" to "Tyler, The Creator"
+        new_name = artist.title()
+        print new_name
+        # if this made some kind of change, start the loop again
+        if new_name != artist:
+            for i in items:
+                if i['name'] == new_name:
+                    return i['uri']
     print "Couldn't find the artist \"%s\"." % artist
-
 
 def get_artists_song_uri(artist_uri, name):
     sp = spotipy.Spotify()
@@ -60,30 +68,23 @@ def get_artists_song_uri(artist_uri, name):
                 return song_uri
     print "Couldn't find the track \"%s\"." % name
 
-def get_list_of_song_uris(d):
+def get_list_of_song_uris(song_dict):
     """
-    Return list of song uris to be passed into Spotipy method user_playlist_add_tracks()
+    Return list of song URIs to be passed into Spotipy method user_playlist_add_tracks()
     """
-    l = []
-    i = 0
-    for k in d:
-        if i < UPLOAD_LIMIT:
-            artist_uri = get_artist_uri(k)
-            song_uri = get_artists_song_uri(artist_uri,d[k])
-            if song_uri == None:
-                print "Couldn't find song for %s: %s." % (k, d[k])
-            else:
-                l.append(song_uri)
-                i += 1
-        else: # reached upload limit
-            break
-    return l
+    list_of_song_uris = []
+    for artist in song_dict:
+        artist_uri = get_artist_uri(artist)
+        song_uri = get_artists_song_uri(artist_uri, song_dict[artist])
+        if song_uri == None:
+            print "Couldn't find the song URI for %s: %s." % (artist, song_dict[artist])
+        else:
+            list_of_song_uris.append(song_uri)
+    return list_of_song_uris
 
 if __name__ == "__main__":
-    # TODO apparantly artist name is case sensitive
-    # TODO leading space in songname won't work
     if len(sys.argv) < 2:
-        print "Usage: \"Artist:Track\""
+        print "Search for Song URI. Usage: \"Artist:Track\""
         sys.exit()
     else:
         args = sys.argv[1:]
@@ -91,3 +92,5 @@ if __name__ == "__main__":
         artist, song = joined.split(":")
         artist_uri = get_artist_uri(artist)
         song_uri = get_artists_song_uri(artist_uri, song)
+        if song_uri:
+            print song_uri

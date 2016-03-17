@@ -14,11 +14,12 @@ def main():
     else:
         user = sys.argv[1]
         url = sys.argv[2]
-    d = scrape_pitchfork(url)
-    l = get_list_of_song_uris(d)
     playlist_name = get_title(url)
     playlist_uri = create_and_return_playlist(user, playlist_name)
-    add_song_to_playlist(user, l, playlist_uri)
+    song_dict = scrape_pitchfork(url)
+    list_of_song_uris = get_list_of_song_uris(song_dict)
+    print "Creating playlist with URI: " + playlist_uri
+    add_song_to_playlist(user, list_of_song_uris, playlist_uri)
 
 if __name__ == "__main__":
     main()
