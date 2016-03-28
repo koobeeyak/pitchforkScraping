@@ -23,10 +23,10 @@ See [Spotipy's documentation](http://spotipy.readthedocs.org/en/latest/) for hel
 
 "Best Of" Example URLs
 ----------------------------
-### [200 Best Songs of the 1980's](http://pitchfork.com/features/lists-and-guides/9466-the-top-200-tracks-of-2010-2014/)
+### [Top 100 Tracks of 2010-2014](http://pitchfork.com/features/lists-and-guides/9466-the-top-200-tracks-of-2010-2014/)
 
 ### [200 Best Songs of the 1980's](http://pitchfork.com/features/lists-and-guides/9700-the-200-best-songs-of-the-1980s/)
 
 ### [100 Best Tracks of 2015](http://pitchfork.com/features/lists-and-guides/9765-the-100-best-tracks-of-2015/)
 
-####More can be found [here](http://pitchfork.com/features/lists-and-guides/).
+####More lists can be found [here](http://pitchfork.com/features/lists-and-guides/).
